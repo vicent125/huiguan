@@ -1,0 +1,84 @@
+:root {
+  /* 方案C（墨绿米白）配色变量 */
+  --color-bg-main: #FAFAF8;       /* 主背景 */
+  --color-bg-card: #FFFFFF;       /* 次背景/卡片 */
+  --color-sidebar: #1A3C34;       /* 侧边栏 */
+  --color-primary: #0F766F;       /* 主色(按钮) */
+  --color-warning: #B45309;       /* 辅助/预警 */
+  --color-text-main: #1C1917;     /* 文字主 */
+  --color-text-sub: #78716C;      /* 文字次 */
+  --color-border: #E7E5E4;        /* 边框 */
+  /* 方案A 图表色 */
+  --chart-color-1: #2D9B6C;
+  --chart-color-2: #94A3B8;
+  --chart-color-3: #D97706;
+  --chart-color-4: #60A5FA;
+  /* 通用样式 */
+  --radius-card: 8px;
+  --shadow-card: 0 4px 16px rgba(28, 25, 23, 0.06);
+
+  font-family: "Microsoft YaHei", "PingFang SC", system-ui, sans-serif;
+  color: var(--color-text-main);
+  background: var(--color-bg-main);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  min-width: 320px;
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-bg-main);
+  color: var(--color-text-main);
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  background: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-card);
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+button:hover {
+  opacity: 0.9;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+  color: var(--color-text-main);
+}
+
+/* 通用卡片样式 */
+.card {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+@media print {
+  .app-nav {
+    display: none !important;
+  }
+}

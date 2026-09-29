@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能农业报告中心</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            .print-card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+        }
+    </style>
+<base target="_blank">
+</head>
+<body class="bg-slate-50 p-4 md:p-8">
+
+    <div id="app" class="max-w-4xl mx-auto bg-white p-6 md:p-8 rounded-2xl shadow-xl border border-slate-100 print-card">
+
+        <div class="mb-6 border-b border-slate-100 pb-4 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    智能农业报告中心
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">水肥一体化监控系统 / 数据分析</p>
+            </div>
+            <span class="no-print bg-emerald-100 text-emerald-800 text-xs px-2.5 py-1 rounded-full font-semibold">
+                系统运行正常
+            </span>
+        </div>
+
+        <!-- 报告列表 -->
+        <div v-if="currentView === 'liebiao'">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    <span class="w-1.5 h-5 bg-emerald-500 rounded-full"></span>
+                    报告列表
+                </h2>
+            </div>
+
+            <div v-if="loading" class="text-center py-8 text-slate-400">加载中...</div>
+            <div v-else-if="error" class="text-center py-8 text-red-500">{{ error }}</div>
+
+            <div v-else class="overflow-hidden border border-slate-200 rounded-xl shadow-sm">
+                <table class="w-full border-collapse bg-white text-left text-sm text-slate-600">
+                    <thead class="bg-slate-50 text-slate-700 font-semibold border-b border-slate-100">
+                        <tr>
+                            <th class="px-6 py-4">报告名称</th>
+                            <th class="px-6 py-4">生成时间</th>
+                            <th class="px-6 py-4 text-right">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <tr v-for="report in reports" :key="report.id" class="hover:bg-slate-50 transition">
+                            <td class="px-6 py-4 font-medium text-slate-900">{{ report.report_title }}</td>
+                            <td class="px-6 py-4 text-slate-400">{{ report.create_time }}</td>
+                            <td class="px-6 py-4 text-right">
+                                <button @click="viewReport(report.id)" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-600 px-4 py-2 rounded-lg font-medium transition text-xs shadow-sm">
+                                    查看报告
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 报告详情 -->
+        <div v-if="currentView === 'baogao'" class="space-y-6">
+
+            <div class="flex justify-between items-center border-b border-slate-100 pb-4 no-print">
+                <button @click="currentView = 'liebiao'" class="text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm font-semibold transition">
+                    ← 返回列表
+                </button>
+            </div>
+
+            <div v-if="reportLoading" class="text-center py-8 text-slate-400">加载报告中...</div>
+
+            <div v-else-if="currentReport" class="space-y-6">
+                <div class="text-center md:text-left py-2">
+                    <h2 class="text-xl font-bold text-slate-800">{{ currentReport.report_title }}</h2>
+                    <p class="text-xs text-slate-400 mt-1">报告生成时间：{{ currentReport.create_time }}</p>
+                </div>
+
+                <!-- 基础信息 -->
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">基础信息</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.basic_info)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                        <div v-if="!formatJSON(currentReport.basic_info).crop_name">
+                            <span class="font-semibold text-slate-700">生育期：</span>
+                            <span class="text-slate-600">{{ currentReport.growth_period }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 监测摘要 -->
+                <div class="p-4 bg-blue-50/40 rounded-xl border border-blue-100">
+                    <h3 class="text-xs font-bold text-blue-600 uppercase tracking-wider mb-3">监测摘要</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.monitor_summary)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 天气摘要 -->
+                <div class="p-4 bg-amber-50/50 rounded-xl border border-amber-100">
+                    <h3 class="text-xs font-bold text-amber-500 uppercase tracking-wider mb-3">天气摘要</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.weather_summary)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 水肥分析结果 -->
+                <div class="p-4 bg-cyan-50/40 rounded-xl border border-cyan-100">
+                    <h3 class="text-xs font-bold text-cyan-600 uppercase tracking-wider mb-3">水肥分析结果</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.water_fertilizer_result)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 决策建议 -->
+                <div class="p-4 bg-emerald-50/40 rounded-xl border border-emerald-100">
+                    <h3 class="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3">决策建议</h3>
+                    <div class="grid grid-cols-1 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.decision_suggestion)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 风险描述 -->
+                <div class="p-4 bg-red-50/40 rounded-xl border border-red-100">
+                    <h3 class="text-xs font-bold text-red-500 uppercase tracking-wider mb-3">风险预警</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.risk_description)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 设备建议 -->
+                <div class="p-4 bg-violet-50/40 rounded-xl border border-violet-100">
+                    <h3 class="text-xs font-bold text-violet-600 uppercase tracking-wider mb-3">设备建议</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                        <div v-for="(val, key) in formatJSON(currentReport.device_suggestion)" :key="key">
+                            <span class="font-semibold text-slate-700">{{ formatKey(key) }}：</span>
+                            <span class="text-slate-600">{{ val }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-6 border-t border-slate-100 flex justify-between items-center no-print">
+                <span class="text-xs text-slate-400">准备就绪，可随时保存为 PDF</span>
+                <button @click="dcPDF" class="bg-slate-800 hover:bg-slate-900 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition shadow-md hover:shadow-lg flex items-center gap-1.5">
+                    导出为 PDF
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+
+        createApp({
+            setup() {
+                const currentView = ref('liebiao');
+                const reports = ref([]);
+                const currentReport = ref(null);
+                const loading = ref(false);
+                const reportLoading = ref(false);
+                const error = ref(null);
+
+                const API_BASE = 'http://127.0.0.1:5000';
+
+                // 字段名中文映射
+                const keyMap = {
+                    crop_name: '作物名称',
+                    growth_period: '生育期',
+                    soil_moisture: '土壤湿度',
+                    avg_max_temp: '平均最高温度',
+                    forecast_days: '预报天数',
+                    water_status: '水分状态',
+                    irrigation_suggestion: '灌溉建议',
+                    fertilization_suggestion: '施肥建议',
+                    drought_risk: '干旱风险',
+                    pest_risk: '病虫害风险',
+                    pump_runtime: '水泵运行时间',
+                    valve_status: '阀门状态',
+                    ph_value: 'pH值',
+                    ec_value: 'EC值',
+                    nitrogen: '氮含量',
+                    phosphorus: '磷含量',
+                    potassium: '钾含量'
+                };
+
+                const formatKey = (key) => {
+                    return keyMap[key] || key;
+                };
+
+                const formatJSON = (str) => {
+                    if (!str) return {};
+                    if (typeof str === 'object') return str;
+                    try {
+                        return JSON.parse(str);
+                    } catch (e) {
+                        return { '原始数据': str };
+                    }
+                };
+
+                // 加载报告列表
+                const loadReports = async () => {
+                    loading.value = true;
+                    error.value = null;
+                    try {
+                        const res = await axios.get(`${API_BASE}/api/baogaozhongxin/baogaojilu`);
+                        if (res.data.code === 200) {
+                            reports.value = res.data.data.list;
+                        } else {
+                            error.value = res.data.message;
+                        }
+                    } catch (err) {
+                        error.value = '加载失败: ' + err.message;
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                // 查看报告详情
+                const viewReport = async (id) => {
+                    currentView.value = 'baogao';
+                    reportLoading.value = true;
+                    try {
+                        const res = await axios.get(`${API_BASE}/api/baogaozhongxin/baogaojilu/${id}`);
+                        if (res.data.code === 200) {
+                            currentReport.value = res.data.data;
+                        }
+                    } catch (err) {
+                        alert('加载报告失败: ' + err.message);
+                    } finally {
+                        reportLoading.value = false;
+                    }
+                };
+
+                const dcPDF = () => {
+                    window.print();
+                };
+
+                onMounted(() => {
+                    loadReports();
+                });
+
+                return {
+                    currentView,
+                    reports,
+                    currentReport,
+                    loading,
+                    reportLoading,
+                    error,
+                    viewReport,
+                    dcPDF,
+                    formatKey,
+                    formatJSON
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

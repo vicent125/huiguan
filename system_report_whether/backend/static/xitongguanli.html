@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统管理 - 预警与日志</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 font-serif min-h-screen">
+
+    <div class="max-w-5xl mx-auto p-6">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-900 flex items-center gap-2">
+                <span class="text-blue-600"></span> 系统管理
+            </h1>
+        </header>
+
+        <div class="border-b border-gray-200 mb-6">
+            <nav class="flex space-x-8" aria-label="Tabs">
+                <button onclick="switchTab('yuzhishezhi', this)" class="tab-btn border-b-2 border-blue-600 py-4 px-1 text-sm font-medium text-blue-600" id="default-tab">
+                    预警阈值设置
+                </button>
+                <button onclick="switchTab('caozuorizhi', this)" class="tab-btn border-b-2 border-transparent py-4 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                    操作日志
+                </button>
+            </nav>
+        </div>
+
+        <main class="bg-white rounded-xl shadow-xs border border-gray-100 p-6">
+
+            <!-- 预警阈值设置 -->
+            <section id="yuzhishezhi" class="tab-content block">
+                <div class="mb-6">
+                    <h2 class="text-xl font-semibold text-gray-900">预警阈值设置</h2>
+                </div>
+
+                <div id="threshold-list" class="mb-6">
+                    <!-- 动态加载阈值列表 -->
+                </div>
+
+                <form id="thForm" onsubmit="handleFormSubmit(event)" class="space-y-6 max-w-xl">
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                        <div>
+                            <label for="maxzhi" class="block text-sm font-medium text-gray-700 mb-2">阈值最大值</label>
+                            <input type="number" id="maxzhi" required placeholder="请输入最大值"
+                                   class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-hidden transition">
+                        </div>
+
+                        <div>
+                            <label for="minzhi" class="block text-sm font-medium text-gray-700 mb-2">阈值最小值</label>
+                            <input type="number" id="minzhi" required placeholder="请输入最小值"
+                                   class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-hidden transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="jibie" class="block text-sm font-medium text-gray-700 mb-2">预警等级</label>
+                        <select id="jibie" required
+                                class="block w-full rounded-lg border border-gray-300 px-4 py-2.5 text-gray-900 shadow-xs focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-hidden transition bg-white">
+                            <option value="" disabled selected>请选择预警等级</option>
+                            <option value="1">提示</option>
+                            <option value="2">次要</option>
+                            <option value="3">重要</option>
+                            <option value="4">紧急</option>
+                        </select>
+                    </div>
+
+                    <div class="pt-2">
+                        <button type="submit"
+                                class="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg focus:outline-hidden focus:ring-2 focus:ring-blue-400 transition cursor-pointer">
+                            保存配置
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- 操作日志 -->
+            <section id="caozuorizhi" class="tab-content hidden">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-900">操作日志</h2>
+                    </div>
+                    <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-blue-600/10 ring-inset">
+                        实时更新
+                    </span>
+                </div>
+
+                <div class="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th scope="col" class="px-6 py-3.5 text-left text-sm font-semibold text-gray-900">操作时间</th>
+                                <th scope="col" class="px-6 py-3.5 text-left text-sm font-semibold text-gray-900">操作人</th>
+                                <th scope="col" class="px-6 py-3.5 text-left text-sm font-semibold text-gray-900">操作类型</th>
+                                <th scope="col" class="px-6 py-3.5 text-left text-sm font-semibold text-gray-900">操作内容</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rizhibiaoge" class="divide-y divide-gray-200 bg-white">
+                            <!-- 动态加载日志 -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://127.0.0.1:5000';
+
+        // 标签页切换
+        function switchTab(sectionId, element) {
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.replace('block', 'hidden');
+            });
+            document.getElementById(sectionId).classList.replace('hidden', 'block');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-blue-600', 'text-blue-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            element.classList.remove('border-transparent', 'text-gray-500');
+            element.classList.add('border-blue-600', 'text-blue-600');
+
+            // 切换到日志页时加载数据
+            if (sectionId === 'caozuorizhi') {
+                loadLogs();
+            }
+        }
+
+        // 加载阈值列表
+        async function loadThresholds() {
+            try {
+                const response = await axios.get(`${API_BASE}/api/xitongguanli/yujingyuzhi`);
+                const result = response.data;
+
+                if (result.code !== 200) return;
+
+                const list = result.data;
+                const container = document.getElementById('threshold-list');
+
+                if (list.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">暂无阈值配置</p>';
+                    return;
+                }
+
+                let html = '<div class="grid grid-cols-1 gap-4 mb-4">';
+                list.forEach(item => {
+                    html += `
+                        <div class="p-4 border border-gray-200 rounded-lg">
+                            <div class="flex justify-between">
+                                <span class="font-medium">${item.threshold_name}</span>
+                                <span class="text-sm text-gray-500">${item.threshold_type}</span>
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">
+                                范围: ${item.min_value} ~ ${item.max_value} | 等级: ${item.warning_level}
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                container.innerHTML = html;
+
+            } catch (err) {
+                console.error('加载阈值失败:', err);
+            }
+        }
+
+        // 保存阈值
+        async function handleFormSubmit(event) {
+            event.preventDefault();
+
+            const maxVal = document.getElementById('maxzhi').value;
+            const minVal = document.getElementById('minzhi').value;
+            const alertLevel = document.getElementById('jibie').value;
+
+            if (Number(minVal) >= Number(maxVal)) {
+                alert('错误：最小值不能大于或等于最大值！');
+                return;
+            }
+
+            try {
+                const response = await axios.post(`${API_BASE}/api/xitongguanli/yujingyuzhi`, {
+                    threshold_type: 'default',
+                    threshold_name: '自定义阈值',
+                    min_value: minVal,
+                    max_value: maxVal,
+                    warning_level: alertLevel,
+                    description: '前端设置的阈值'
+                });
+
+                const result = response.data;
+                if (result.code === 200) {
+                    alert('保存成功！');
+                    loadThresholds(); // 刷新列表
+                } else {
+                    alert('保存失败: ' + result.message);
+                }
+
+            } catch (err) {
+                alert('保存失败: ' + err.message);
+            }
+        }
+
+        // 加载操作日志
+        async function loadLogs() {
+            try {
+                const response = await axios.get(`${API_BASE}/api/xitongguanli/caozuorizhi`);
+                const result = response.data;
+
+                if (result.code !== 200) return;
+
+                const logs = result.data.list;
+                const tbody = document.getElementById('rizhibiaoge');
+
+                if (logs.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="px-6 py-4 text-center text-gray-500">暂无日志</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => `
+                    <tr>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-500 font-sans">${log.operation_time}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900 font-medium">${log.operator || '系统'}</td>
+                        <td class="whitespace-nowrap px-6 py-4 text-sm text-gray-900">${log.operation_type}</td>
+                        <td class="px-6 py-4 text-sm text-gray-600">${log.operation_content}</td>
+                    </tr>
+                `).join('');
+
+            } catch (err) {
+                console.error('加载日志失败:', err);
+            }
+        }
+
+        // 页面加载时初始化
+        window.addEventListener('load', () => {
+            loadThresholds();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,269 @@
+version: '1.0'
+name: huiguanyunkong-pipeline
+displayName: 慧灌云控构建流水线
+
+triggers:
+  push:
+    branches:
+      include:
+        - main
+        - master
+
+stages:
+  # ==================== 阶段1：后端构建 ====================
+  - name: backend-build
+    displayName: 后端Python构建
+    steps:
+      # --- 模块1: denglu_shouye_xietong ---
+      - name: build-m1
+        displayName: 构建模块1-登录首页协同
+        steps:
+          - name: install
+            displayName: 安装Python依赖
+            script: |
+              cd denglu_shouye_xietong/backend
+              pip install -r requirements.txt -t ./vendor
+              zip -r ../../m1-backend.zip . -x "vendor/*"
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m1-backend
+              path: m1-backend.zip
+
+      # --- 模块2: nongyeguanlipingtai ---
+      - name: build-m2
+        displayName: 构建模块2-农业管理平台
+        steps:
+          - name: install
+            displayName: 安装Python依赖
+            script: |
+              cd nongyeguanlipingtai/houduan
+              pip install flask flask_sqlalchemy flask_cors pandas openpyxl pymysql -t ./vendor
+              zip -r ../../m2-backend.zip . -x "vendor/*"
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m2-backend
+              path: m2-backend.zip
+
+      # --- 模块3: system_report_whether ---
+      - name: build-m3
+        displayName: 构建模块3-系统报表天气
+        steps:
+          - name: install
+            displayName: 安装Python依赖
+            script: |
+              cd system_report_whether/backend
+              pip install -r requirements.txt -t ./vendor
+              zip -r ../../m3-backend.zip . -x "vendor/*"
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m3-backend
+              path: m3-backend.zip
+
+      # --- 模块4: yucefenxi_shuifeijuece ---
+      - name: build-m4
+        displayName: 构建模块4-预测分析水肥决策
+        steps:
+          - name: install
+            displayName: 安装Python依赖
+            script: |
+              cd yucefenxi_shuifeijuece/backend
+              pip install -r requirements.txt -t ./vendor
+              zip -r ../../m4-backend.zip . -x "vendor/*"
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m4-backend
+              path: m4-backend.zip
+
+      # --- 模块5: zhineng_shuifei ---
+      - name: build-m5
+        displayName: 构建模块5-智能水肥主模块
+        steps:
+          - name: install
+            displayName: 安装Python依赖
+            script: |
+              cd zhineng_shuifei/backend
+              pip install -r requirements.txt -t ./vendor
+              zip -r ../../m5-backend.zip . -x "vendor/*"
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m5-backend
+              path: m5-backend.zip
+
+  # ==================== 阶段2：前端构建 ====================
+  - name: frontend-build
+    displayName: 前端Vue构建
+    dependsOn: backend-build
+    steps:
+      # --- 模块1前端: shouye ---
+      - name: build-m1-shouye
+        displayName: 构建模块1前端-首页
+        steps:
+          - name: npm-build
+            displayName: npm构建
+            script: |
+              cd denglu_shouye_xietong/frontend/shouye
+              npm install
+              npm run build
+              cd ../../../..
+              zip -r m1-frontend-shouye.zip denglu_shouye_xietong/frontend/shouye/dist
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m1-frontend-shouye
+              path: m1-frontend-shouye.zip
+
+      # --- 模块1前端: denglu ---
+      - name: build-m1-denglu
+        displayName: 构建模块1前端-登录
+        steps:
+          - name: npm-build
+            displayName: npm构建
+            script: |
+              cd denglu_shouye_xietong/frontend/denglu
+              npm install
+              npm run build
+              cd ../../../..
+              zip -r m1-frontend-denglu.zip denglu_shouye_xietong/frontend/denglu/dist
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m1-frontend-denglu
+              path: m1-frontend-denglu.zip
+
+      # --- 模块1前端: xietong ---
+      - name: build-m1-xietong
+        displayName: 构建模块1前端-协同
+        steps:
+          - name: npm-build
+            displayName: npm构建
+            script: |
+              cd denglu_shouye_xietong/frontend/xietong
+              npm install
+              npm run build
+              cd ../../../..
+              zip -r m1-frontend-xietong.zip denglu_shouye_xietong/frontend/xietong/dist
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m1-frontend-xietong
+              path: m1-frontend-xietong.zip
+
+      # --- 模块3前端 ---
+      - name: build-m3-frontend
+        displayName: 构建模块3前端-系统报表
+        steps:
+          - name: npm-build
+            displayName: npm构建
+            script: |
+              cd system_report_whether/frontend
+              npm install
+              npm run build
+              cd ../../..
+              zip -r m3-frontend.zip system_report_whether/frontend/dist
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m3-frontend
+              path: m3-frontend.zip
+
+      # --- 模块4前端 ---
+      - name: build-m4-frontend
+        displayName: 构建模块4前端-预测分析
+        steps:
+          - name: npm-build
+            displayName: npm构建
+            script: |
+              cd yucefenxi_shuifeijuece/frontend
+              npm install
+              npm run build
+              cd ../../..
+              zip -r m4-frontend.zip yucefenxi_shuifeijuece/frontend/dist
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: m4-frontend
+              path: m4-frontend.zip
+
+      # --- 模块2+5原生HTML前端打包 ---
+      - name: pack-static-frontend
+        displayName: 打包原生HTML前端
+        steps:
+          - name: pack
+            displayName: 打包模块2+5前端
+            script: |
+              zip -r m2-frontend.zip nongyeguanlipingtai/index.html nongyeguanlipingtai/jiankong.html nongyeguanlipingtai/js/
+              zip -r m5-frontend.zip zhineng_shuifei/web/
+          - name: artifact
+            displayName: 上传制品
+            artifact:
+              name: static-frontend
+              path: |
+                m2-frontend.zip
+                m5-frontend.zip
+
+  # ==================== 阶段3：数据库初始化 ====================
+  - name: database-init
+    displayName: 数据库初始化
+    dependsOn: backend-build
+    steps:
+      - name: sql-init
+        displayName: 执行MySQL建表
+        script: |
+          mysql -h ${MYSQL_HOST} -u ${MYSQL_USER} -p${MYSQL_PASSWORD} ${MYSQL_DB} < zhineng_shuifei/backend/mysql_chushihua.sql
+        condition: eq("${SKIP_DB_INIT}", "false")
+
+  # ==================== 阶段4：部署 ====================
+  - name: deploy
+    displayName: 部署到ECS
+    dependsOn:
+      - frontend-build
+      - database-init
+    steps:
+      - name: deploy-backend
+        displayName: 部署后端到ECS
+        script: |
+          # 上传后端制品到ECS
+          scp m1-backend.zip root@${ECS_IP}:/opt/huiguan/
+          scp m2-backend.zip root@${ECS_IP}:/opt/huiguan/
+          scp m3-backend.zip root@${ECS_IP}:/opt/huiguan/
+          scp m4-backend.zip root@${ECS_IP}:/opt/huiguan/
+          scp m5-backend.zip root@${ECS_IP}:/opt/huiguan/
+          # 远程解压并重启服务
+          ssh root@${ECS_IP} "cd /opt/huiguan && \
+            unzip -o m1-backend.zip -d denglu_shouye_xietong/backend/ && \
+            unzip -o m2-backend.zip -d nongyeguanlipingtai/houduan/ && \
+            unzip -o m3-backend.zip -d system_report_whether/backend/ && \
+            unzip -o m4-backend.zip -d yucefenxi_shuifeijuece/backend/ && \
+            unzip -o m5-backend.zip -d zhineng_shuifei/backend/ && \
+            systemctl restart huiguan-m1 huiguan-m2a huiguan-m2b huiguan-m3 huiguan-m4 huiguan-m5"
+
+      - name: deploy-frontend
+        displayName: 部署前端到OBS+ECS
+        script: |
+          # Vue前端上传到OBS
+          obsutil cp -r -f m1-frontend-shouye.zip obs://${OBS_BUCKET}/frontend/
+          obsutil cp -r -f m1-frontend-denglu.zip obs://${OBS_BUCKET}/frontend/
+          obsutil cp -r -f m1-frontend-xietong.zip obs://${OBS_BUCKET}/frontend/
+          obsutil cp -r -f m3-frontend.zip obs://${OBS_BUCKET}/frontend/
+          obsutil cp -r -f m4-frontend.zip obs://${OBS_BUCKET}/frontend/
+          # 原生HTML前端部署到ECS
+          scp m2-frontend.zip root@${ECS_IP}:/opt/huiguan/frontend/
+          scp m5-frontend.zip root@${ECS_IP}:/opt/huiguan/frontend/
+          ssh root@${ECS_IP} "cd /opt/huiguan/frontend && \
+            unzip -o m2-frontend.zip && unzip -o m5-frontend.zip && \
+            nginx -s reload"
+
+      - name: verify
+        displayName: 部署验证
+        script: |
+          ssh root@${ECS_IP} " \
+            systemctl is-active huiguan-m1 huiguan-m2a huiguan-m2b huiguan-m3 huiguan-m4 huiguan-m5 && \
+            curl -s http://127.0.0.1:5050/api/zonglan | head -1 && \
+            curl -s http://127.0.0.1:5010/ | head -1 && \
+            curl -s http://127.0.0.1:5030/api/health | head -1 && \
+            echo 'Deployment verification passed!'"

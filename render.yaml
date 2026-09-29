@@ -1,0 +1,94 @@
+services:
+  - type: web
+    name: huiguan-gateway
+    runtime: docker
+    dockerfilePath: ./bushu/docker/gateway.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: GATEWAY_PORT
+        value: "10000"
+
+  - type: web
+    name: huiguan-login
+    runtime: docker
+    dockerfilePath: ./bushu/docker/login.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+      - key: FLASK_ENV
+        value: production
+      - key: INITIAL_ADMIN_USERNAME
+        sync: false
+      - key: INITIAL_ADMIN_PASSWORD
+        sync: false
+
+  - type: web
+    name: huiguan-basic
+    runtime: docker
+    dockerfilePath: ./bushu/docker/basic.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: BASIC_DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+
+  - type: web
+    name: huiguan-monitor
+    runtime: docker
+    dockerfilePath: ./bushu/docker/monitor.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: MONITOR_DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+
+  - type: web
+    name: huiguan-report
+    runtime: docker
+    dockerfilePath: ./bushu/docker/report.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+
+  - type: web
+    name: huiguan-prediction
+    runtime: docker
+    dockerfilePath: ./bushu/docker/prediction.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+
+  - type: web
+    name: huiguan-shuifei
+    runtime: docker
+    dockerfilePath: ./bushu/docker/shuifei.Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: huiguan-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+
+databases:
+  - name: huiguan-db
+    plan: free

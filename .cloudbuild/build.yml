@@ -1,0 +1,25 @@
+version: 2.0
+steps:
+  # 第一步：拉取代码（保留默认）
+  - checkout:
+      name: "checkout"
+      inputs:
+        scm: "codehub"
+        url: "git@codehub.devcloud.cn-north-4.huaweicloud.com:dafd4eaad46f48fabee0ca97a048caa7/huiguanyunkong.git"
+        branch: "main"
+        lfs: false
+        submodule: false
+
+  # 第二步：安装 Python 依赖
+  - sh:
+      name: "安装依赖"
+      inputs:
+        command: |
+          python3 -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+  # 第三步：（可选）运行语法检查，确保代码没问题
+  - sh:
+      name: "代码检查"
+      inputs:
+        command: python3 -m py_compile app.py

@@ -1,0 +1,119 @@
+version: '3.8'
+
+services:
+  # 模块1: 登录首页协同 (端口5010)
+  huiguan-m1:
+    build:
+      context: ../../denglu_shouye_xietong/backend
+      dockerfile: ../../bushu/docker/denglu_shouye_xietong_Dockerfile
+    container_name: huiguan-m1
+    ports:
+      - "5010:5010"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+    networks:
+      - huiguan-net
+
+  # 模块2a: 数据录入与检测 (端口5001)
+  huiguan-m2a:
+    build:
+      context: ../../nongyeguanlipingtai/houduan
+      dockerfile: ../../bushu/docker/nongyeguanlipingtai_jiance_Dockerfile
+    container_name: huiguan-m2a
+    ports:
+      - "5001:5001"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ../../nongyeguanlipingtai/houduan/shuju:/app/shuju
+    restart: always
+    networks:
+      - huiguan-net
+
+  # 模块2b: 基础信息管理 (端口5002)
+  huiguan-m2b:
+    build:
+      context: ../../nongyeguanlipingtai/houduan
+      dockerfile: ../../bushu/docker/nongyeguanlipingtai_jichu_Dockerfile
+    container_name: huiguan-m2b
+    ports:
+      - "5002:5002"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ../../nongyeguanlipingtai/houduan/shuju:/app/shuju
+    restart: always
+    networks:
+      - huiguan-net
+
+  # 模块3: 系统报表天气 (端口5030)
+  huiguan-m3:
+    build:
+      context: ../../system_report_whether/backend
+      dockerfile: ../../bushu/docker/system_report_whether_Dockerfile
+    container_name: huiguan-m3
+    ports:
+      - "5030:5030"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+    networks:
+      - huiguan-net
+
+  # 模块4: 预测分析水肥决策 (端口5041)
+  huiguan-m4:
+    build:
+      context: ../../yucefenxi_shuifeijuece/backend
+      dockerfile: ../../bushu/docker/yucefenxi_shuifeijuece_Dockerfile
+    container_name: huiguan-m4
+    ports:
+      - "5041:5041"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+    networks:
+      - huiguan-net
+
+  # 模块5: 智能水肥主模块 (端口5050)
+  huiguan-m5:
+    build:
+      context: ../../zhineng_shuifei/backend
+      dockerfile: ../../bushu/docker/zhineng_shuifei_Dockerfile
+    container_name: huiguan-m5
+    ports:
+      - "5050:5050"
+    environment:
+      - SHUIFEI_DB=${SHUIFEI_DB}
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ../../zhineng_shuifei/web:/app/web
+    restart: always
+    networks:
+      - huiguan-net
+
+  # Nginx反向代理
+  nginx:
+    image: nginx:alpine
+    container_name: huiguan-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx_huiguan.conf:/etc/nginx/conf.d/default.conf
+      - ../../nongyeguanlipingtai:/opt/frontend/nongyeguanlipingtai
+      - ../../zhineng_shuifei/web:/opt/frontend/zhineng_shuifei
+    depends_on:
+      - huiguan-m1
+      - huiguan-m2a
+      - huiguan-m2b
+      - huiguan-m3
+      - huiguan-m4
+      - huiguan-m5
+    restart: always
+    networks:
+      - huiguan-net
+
+networks:
+  huiguan-net:
+    driver: bridge

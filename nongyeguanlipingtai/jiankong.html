@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据录入与监测 - 农业管理平台</title>
+  <style>
+    :root {
+      --bg: #FAFAF8; --panel: #FFFFFF; --border: #E7E5E4; --text: #1C1917;
+      --muted: #78716C; --primary: #0F766F; --primary-dark: #0d6963; --primary-soft: rgba(15,118,111,.08);
+      --danger: #B45309; --shadow: 0 4px 16px rgba(28,25,23,.06);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; background: #1A3C34; color: #C7D4CF; padding: 22px 0; flex-shrink: 0; }
+    .logo { font-size: 17px; font-weight: 700; color: #fff; padding: 0 22px; }
+    .logo-sub { font-size: 12px; color: #8A9B95; padding: 4px 22px 18px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+    .nav-group { font-size: 11px; color: #7A8B85; padding: 16px 22px 6px; letter-spacing: .5px; }
+    .nav-item { text-align: left; background: transparent; border: none; color: #C7D4CF; padding: 12px 22px; font-size: 14px; cursor: pointer; border-left: 3px solid transparent; transition: background .15s; }
+    .nav-item:hover { background: rgba(255,255,255,.06); }
+    .nav-item.active { background: rgba(255,255,255,.08); color: #fff; border-left-color: var(--primary); font-weight: 600; }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar { height: 60px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; }
+    .topbar h1 { font-size: 18px; font-weight: 600; }
+    .topbar-right { color: var(--muted); font-size: 13px; }
+    .content { padding: 28px; }
+    .toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 12px; }
+    .toolbar .left { display: flex; gap: 10px; align-items: center; }
+    .search { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; width: 240px; font-size: 13px; outline: none; background: var(--panel); }
+    .search:focus { border-color: var(--primary); }
+    .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab { background: transparent; border: none; padding: 10px 16px; font-size: 14px; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--primary); border-bottom-color: var(--primary); font-weight: 600; }
+    .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { background: #FAFAF8; font-weight: 600; color: #78716C; font-size: 13px; }
+    td { font-size: 13px; }
+    tbody tr:hover { background: rgba(15,118,111,.04); }
+    .col-op { width: 130px; text-align: center; }
+    td.col-op { text-align: center; }
+    .empty { text-align: center; color: var(--muted); padding: 36px 0; }
+    .btn { border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; cursor: pointer; font-weight: 500; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost { background: #F5F5F4; color: #57534E; }
+    .btn-ghost:hover { background: #EAEAE8; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-edit { background: var(--primary-soft); color: var(--primary-dark); margin-right: 6px; }
+    .btn-edit:hover { background: rgba(15,118,111,.14); }
+    .btn-del { background: rgba(180,83,9,.08); color: var(--danger); }
+    .btn-del:hover { background: rgba(180,83,9,.14); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(28,25,23,.45); display: flex; align-items: center; justify-content: center; z-index: 50; }
+    .modal-overlay[hidden] { display: none; }
+    .modal { background: var(--panel); width: 480px; max-width: 92vw; border-radius: 16px; box-shadow: 0 16px 48px rgba(28,25,23,.18); overflow: hidden; }
+    .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 22px; border-bottom: 1px solid var(--border); }
+    .modal-header h3 { font-size: 16px; }
+    .modal-close { background: none; border: none; font-size: 22px; color: var(--muted); cursor: pointer; line-height: 1; }
+    .modal-body { padding: 20px 22px; max-height: 60vh; overflow-y: auto; }
+    .modal-footer { padding: 14px 22px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+    .field { margin-bottom: 14px; }
+    .field label { display: block; font-size: 13px; color: #78716C; margin-bottom: 6px; }
+    .field label .req { color: var(--danger); margin-left: 2px; }
+    .field input, .field select { width: 100%; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; outline: none; background: #FFFFFF; }
+    .field input:focus, .field select:focus { border-color: var(--primary); }
+    .field .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    .section-title { font-size: 13px; color: var(--muted); margin: 4px 0 14px; }
+    .banner { background: rgba(15,118,111,.06); color: #0F766F; border: 1px solid rgba(15,118,111,.18); border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 16px; }
+    .loading { padding: 30px 0; text-align: center; color: var(--muted); font-size: 14px; }
+    .err-box { background: rgba(180,83,9,.06); color: #B45309; border: 1px solid rgba(180,83,9,.20); border-radius: 12px; padding: 18px 20px; font-size: 13px; line-height: 1.7; }
+    .form-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); padding: 24px; max-width: 760px; }
+    .form-card .form-actions { display: flex; gap: 10px; margin-top: 6px; }
+    .recent { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 16px; }
+    .recent h4 { font-size: 14px; margin-bottom: 10px; }
+    .recent-list { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .recent-list li { font-size: 13px; color: #57534E; display: flex; align-items: center; gap: 8px; }
+    .recent-list .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); display: inline-block; flex-shrink: 0; }
+    .msg { font-size: 13px; margin: 4px 0 10px; min-height: 0; }
+    .msg.ok { color: var(--primary-dark); }
+    .msg.err { color: var(--danger); }
+    .import-zone { margin-bottom: 18px; }
+    #importPreview .form-actions { margin-top: 14px; }
+    .result-count { font-size: 12px; color: var(--muted); margin: 0 0 10px 2px; }
+    .filter-bar { display: flex; gap: 14px; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; box-shadow: var(--shadow); }
+    .filter-bar label { font-size: 13px; color: #78716C; display: flex; flex-direction: column; gap: 6px; }
+    .filter-bar input { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 13px; outline: none; background: #FFFFFF; min-width: 150px; }
+    .filter-bar input:focus { border-color: var(--primary); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <!-- 侧边栏（仅本模块） -->
+    <aside class="sidebar">
+      <div class="logo"> 农业管理平台</div>
+      <div class="logo-sub">数据录入与监测</div>
+      <nav class="nav">
+        <div class="nav-group">数据录入与监测</div>
+        <button class="nav-item active" data-page="manual">手动录入</button>
+        <button class="nav-item" data-page="import">批量导入</button>
+        <button class="nav-item" data-page="history">历史监测数据</button>
+      </nav>
+    </aside>
+
+    <!-- 主区域 -->
+    <main class="main">
+      <header class="topbar">
+        <h1 id="pageTitle">手动录入</h1>
+        <div class="topbar-right">智慧农业 · 数据维护平台</div>
+      </header>
+      <section id="content" class="content"><!-- 动态渲染 --></section>
+    </main>
+  </div>
+
+  <!-- Excel 解析库（批量导入Excel时前端预览用，CSV不依赖此库） -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="js/jiankong.js"></script>
+</body>
+</html>

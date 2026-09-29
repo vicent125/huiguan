@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>未来三天天气预报</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios@1.6.0/dist/axios.min.js"></script>
+    <style>
+        /* 原来的样式保持不变 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .chart-container {
+            width: 100%;
+            height: 350px;
+            margin-bottom: 30px;
+        }
+        .loading {
+            text-align: center;
+            color: #999;
+            padding: 50px;
+        }
+        .error {
+            text-align: center;
+            color: #ff4d4f;
+            padding: 50px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>未来三天天气预报</h1>
+
+    <div id="loading" class="loading">正在加载数据...</div>
+    <div id="error" class="error" style="display:none;"></div>
+
+    <div id="charts" style="display:none;">
+        <div id="tpbiao" class="chart-container"></div>
+        <div id="rabiao" class="chart-container"></div>
+    </div>
+</div>
+
+<script>
+    // API 基础地址
+    const API_BASE = 'http://127.0.0.1:5000';
+
+    // 获取天气预报数据
+    async function loadWeatherData() {
+        try {
+            const response = await axios.get(`${API_BASE}/api/tianqifenxi/tianqiyubao`);
+            const result = response.data;
+
+            if (result.code !== 200) {
+                throw new Error(result.message);
+            }
+
+            const data = result.data;
+            const trend = data.trend_chart;
+
+            // 隐藏加载，显示图表
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('charts').style.display = 'block';
+
+            // 渲染温度图表
+            renderTempChart(trend.dates, trend.max_temps, trend.min_temps);
+
+            // 渲染降雨图表
+            renderRainChart(trend.dates, trend.rainfalls);
+
+        } catch (err) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('error').textContent = '加载失败: ' + err.message;
+        }
+    }
+
+    // 渲染温度图表
+    function renderTempChart(dates, maxTemps, minTemps) {
+        const tempChart = echarts.init(document.getElementById('tpbiao'));
+        const tempOption = {
+            title: {
+                text: '未来三天温度趋势',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis'
+            },
+            legend: {
+                data: ['最高温度', '最低温度'],
+                bottom: 0
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '10%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                boundaryGap: true,
+                data: dates
+            },
+            yAxis: {
+                type: 'value',
+                name: '温度 (°C)'
+            },
+            series: [
+                {
+                    name: '最高温度',
+                    type: 'line',
+                    data: maxTemps,
+                    color: '#ff4d4f',
+                    symbol: 'circle',
+                    symbolSize: 12,
+                    label: {
+                        show: true,
+                        position: 'top',
+                        formatter: '{c}°C'
+                    }
+                },
+                {
+                    name: '最低温度',
+                    type: 'line',
+                    data: minTemps,
+                    color: '#52c41a',
+                    symbol: 'circle',
+                    symbolSize: 12,
+                    label: {
+                        show: true,
+                        position: 'bottom',
+                        formatter: '{c}°C'
+                    }
+                }
+            ]
+        };
+        tempChart.setOption(tempOption);
+        return tempChart;
+    }
+
+    // 渲染降雨图表
+    function renderRainChart(dates, rainfalls) {
+        const rainChart = echarts.init(document.getElementById('rabiao'));
+        const rainOption = {
+            title: {
+                text: '未来三天降雨量',
+                left: 'center'
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: '{b}: {c}mm'
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'category',
+                data: dates
+            },
+            yAxis: {
+                type: 'value',
+                name: '降雨量 (mm)',
+                min: 0
+            },
+            series: [{
+                data: rainfalls,
+                type: 'bar',
+                barWidth: '40%',
+                color: '#87ceeb',
+                label: {
+                    show: true,
+                    position: 'top',
+                    formatter: '{c}mm'
+                }
+            }]
+        };
+        rainChart.setOption(rainOption);
+        return rainChart;
+    }
+
+    // 页面加载时获取数据
+    window.addEventListener('load', loadWeatherData);
+
+    // 响应式
+    window.addEventListener('resize', () => {
+        // ECharts 实例会在渲染时保存，这里简化处理
+    });
+</script>
+
+</body>
+</html>
