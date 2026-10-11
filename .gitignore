@@ -20,3 +20,26 @@ venv/
 *.rar
 *.tmp
 *.bak
+
+# Local training data and generated artifacts. Keep deployable model weights
+# (*.pt, *.joblib) reviewable; do not publish raw datasets or experiment runs.
+**/runs/
+**/*.cache
+**/olive-fruit-dataset/
+**/olive-leaf-image-dataset/
+**/olive-fruit-yolo/
+**/datasets/
+**/uploads/
+**/tmp/
+*.onnx
+*.safetensors
+
+# Research attachments and temporary extraction files in the repository root.
+/*.pdf
+/*.xlsx
+/*.xls
+/*.docx
+/cg_recnet.txt
+/paper_extract.txt
+/tmp_*.txt
+/yolo11n.pt

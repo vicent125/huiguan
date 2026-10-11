@@ -1,0 +1,5 @@
+path: C:/Users/D1782/Desktop/woyeyunshu/zhineng_shuifei/backend/models/olive-fruit-yolo
+train: images/train
+val: images/val
+names:
+  0: olive_fruit

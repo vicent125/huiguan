@@ -1,4 +1,4 @@
-"""慧灌云控统一后端入口，所有业务接口采用小写拼音。
+"""沃野云枢统一后端入口，所有业务接口采用小写拼音。
 
 运行环境：Python 3.10+，Flask 3.x，flask-cors
 依赖：fenxijuece.py(决策算法), shujuku.py(数据库), tianqifuwu.py(天气服务)
@@ -37,10 +37,27 @@ from fenxijuece import ZengliangHuigui, gengxin_moxing, jisuan_xiuzheng_xishu, s
 from shujuku import lianjie, shengcheng_biao, zidian
 from tianqifuwu import YUSHE_DIQU, baocun_tianqi, huoqu_jingwei_tianqi, huoqu_yucheng_tianqi
 from ai_jiekou import ai_lantu
+from olive_predict.engine import predict as olive_predict, InputError as OliveInputError
+from qixiang_lishi import baseline as weather_baseline, workbook_status
+from hanlaojizhuan import evaluate as evaluate_hanlaojizhuan
+from kexindu import evaluate as evaluate_kexindu
+try:
+    from hydro_models import run_hydro_ml, model_status as hydro_model_status
+except ImportError:
+    from .hydro_models import run_hydro_ml, model_status as hydro_model_status
+try:
+    from new_features import grade_soil, soil_data_status, sample_soil_grid, analyze_pest_image
+except ImportError:
+    from .new_features import grade_soil, soil_data_status, sample_soil_grid, analyze_pest_image
+try:
+    from pest_models import model_status as get_pest_model_status
+except ImportError:
+    from .pest_models import model_status as get_pest_model_status
 
 gen_lujing = os.path.dirname(os.path.abspath(__file__))
 wangye_lujing = os.path.join(os.path.dirname(gen_lujing), "web")
 app = Flask(__name__, static_folder=wangye_lujing, static_url_path="")
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 CORS(app)
 app.register_blueprint(ai_lantu)
 
@@ -84,6 +101,41 @@ def shuzi(value, default=0):
 
 def shifou_zhen(value):
     return value is True or str(value).lower() in ("true", "1", "yes", "on")
+
+
+def _region_name(value):
+    text = str(value or "")
+    if "西昌" in text or "瑗挎槍" in text:
+        return "西昌"
+    return "雅安"
+
+
+def _olive_weather(rows, start, days):
+    """Convert legacy weather rows to the new engine contract."""
+    result = []
+    for row in (rows or [])[:days]:
+        day = row.get("yubaoriqi")
+        if not day:
+            continue
+        et0 = row.get("zhengfa_liang")
+        rain = row.get("jiangyu_liang")
+        if et0 is None or rain is None:
+            continue
+        result.append({"date": str(day)[:10], "et0_mm": float(et0), "rain_mm": float(rain)})
+    return result
+
+
+def _olive_request(data, jiance, weather, zuowu, days):
+    region = _region_name(data.get("region") or data.get("diqu") or (weather[0].get("diqu") if weather else ""))
+    as_of = str(data.get("as_of_date") or date.today().isoformat())[:10]
+    payload = dict(data)
+    payload.update({"region": region, "as_of_date": as_of, "days": days, "crop_id": zuowu.get("id")})
+    payload["weather_forecast"] = data.get("weather_forecast") or _olive_weather(weather, as_of, days)
+    payload.setdefault("site_id", data.get("site_id"))
+    # Legacy monitoring values are percentages; the new contract needs VWC.
+    if not payload.get("history_daily") and not payload.get("history_15min"):
+        payload["history_daily"] = []
+    return payload
 
 
 ZIDUAN_MINGCHENG = {
@@ -372,7 +424,8 @@ def tianqi():
     conn = lianjie()
     rows = huoqu_tianqi(conn)
     conn.close()
-    return fanhui({"diqu": "四川省雅安市雨城区", "forecast_list": rows})
+    return fanhui({"diqu": "四川省雅安市雨城区", "forecast_list": rows,
+                   "hanlao_evaluation": evaluate_hanlaojizhuan(rows), "history_workbooks": workbook_status()})
 
 
 @app.post("/api/tianqi/shuaxin")
@@ -408,7 +461,8 @@ def tianqi_jingwei():
         return fanhui(None, "请提供lat(纬度)和lon(经度)参数", 400)
     try:
         rows = huoqu_jingwei_tianqi(lat, lon, diming)
-        return fanhui({"diqu": diming or f"经纬度({lat},{lon})", "weidu": lat, "jingdu": lon, "forecast_list": rows}, "天气查询成功")
+        return fanhui({"diqu": diming or f"经纬度({lat},{lon})", "weidu": lat, "jingdu": lon,
+                       "forecast_list": rows, "hanlao_evaluation": evaluate_hanlaojizhuan(rows)}, "天气查询成功")
     except Exception as exc:
         return fanhui(None, f"天气查询失败：{exc}", 500)
 
@@ -429,7 +483,8 @@ def tianqi_shuaxin_diqu():
         jilu_rizhi(conn, "天气更新", f"更新{diming}未来三天天气")
         conn.commit()
         conn.close()
-        return fanhui({"diqu": diming, "weidu": lat, "jingdu": lon, "forecast_list": rows}, "天气更新成功")
+        return fanhui({"diqu": diming, "weidu": lat, "jingdu": lon, "forecast_list": rows,
+                       "hanlao_evaluation": evaluate_hanlaojizhuan(rows)}, "天气更新成功")
     except Exception as exc:
         return fanhui(None, f"在线更新失败：{exc}", 500)
 
@@ -448,13 +503,37 @@ def yuce():
         weather = data["tianqi_data"]
     else:
         weather = huoqu_tianqi(conn)
-    result = shengcheng_yuce(jiance, weather, zuowu, data.get("tianshu", 3), use_weather)
-    conn.execute("INSERT INTO yuce(zuowu_id,yuce_tianshu,xushui_json,xufei_json,shidu_json,fenxi,tianqi_shuoming,jilu_shijian) VALUES (?,?,?,?,?,?,?,?)", (zuowu["id"], len(result["dates"]), json.dumps(result["xushui"]), json.dumps(result["xufei"]), json.dumps(result["shidu"]), result["fenxi"], result["tianqi_shuoming"], shijian()))
+    days = max(1, min(3, int(data.get("tianshu", 3) or 3)))
+    legacy_result = shengcheng_yuce(jiance, weather, zuowu, days, use_weather)
+    result = legacy_result
+    olive_result = None
+    try:
+        olive_payload = _olive_request(data, jiance, weather, zuowu, days)
+        if olive_payload.get("water") or olive_payload.get("fertilizer") or olive_payload.get("history_daily") or olive_payload.get("history_15min"):
+            olive_result = olive_predict(olive_payload, model_dir=os.path.join(gen_lujing, "models"))
+            result = {**legacy_result,
+                "dates": olive_result.get("dates", legacy_result["dates"]),
+                "xushui": olive_result.get("predicted_water_need", legacy_result["xushui"]),
+                "xufei": olive_result.get("predicted_fertilizer_need", legacy_result["xufei"]),
+                "shidu": olive_result.get("predicted_soil_moisture", legacy_result["shidu"]),
+                "fenxi": olive_result.get("drought_analysis", legacy_result["fenxi"]),
+                "tianqi_shuoming": "新版水肥预测引擎（保留旧版字段兼容）"}
+    except (OliveInputError, ValueError, KeyError) as exc:
+        olive_result = {"schema_version": "2.1", "status": "needs_inputs", "warning": str(exc)}
+    # ML is optional and additive. Keep the database record on the legacy
+    # shape, then expose the auxiliary model result in the API response.
     history = [zidian(x) for x in conn.execute("SELECT turang_shidu,jilu_shijian FROM jiance WHERE zuowu_id=? ORDER BY jilu_shijian DESC LIMIT 7", (zuowu["id"],)).fetchall()]
     jilu_rizhi(conn, "预测分析", f"生成 {len(result['dates'])} 日预测，天气数据：{'采用' if use_weather else '未采用'}")
+    hydro_ml = run_hydro_ml(data, days)
+    if hydro_ml.get("lstm", {}).get("status") == "ready":
+        result["ml_soil_moisture"] = [row["soil_moisture_pct"] for row in hydro_ml["lstm"]["daily"]]
+        result["ml_model_basis"] = "LSTM传感器序列辅助；旧版规则/新版水量平衡仍为主结果"
+    conn.execute("INSERT INTO yuce(zuowu_id,yuce_tianshu,xushui_json,xufei_json,shidu_json,fenxi,tianqi_shuoming,jilu_shijian) VALUES (?,?,?,?,?,?,?,?)", (zuowu["id"], len(result["dates"]), json.dumps(result["xushui"]), json.dumps(result["xufei"]), json.dumps(result["shidu"]), result["fenxi"], result["tianqi_shuoming"], shijian()))
     conn.commit()
     conn.close()
-    return fanhui({"jiance": jiance, "zuowu": zuowu, "tianqi": weather, "lishi": list(reversed(history)), **result})
+    return fanhui({"jiance": jiance, "zuowu": zuowu, "tianqi": weather, "lishi": list(reversed(history)), **result,
+                   "schema_version": "2.1", "new_prediction": olive_result, "hydro_ml": hydro_ml,
+                   "hydro_model_status": hydro_model_status(), "history_workbooks": workbook_status()})
 
 
 # 前端预测分析页调用：删除指定预测记录。
@@ -485,6 +564,10 @@ def juece():
     shidu = shuzi(jiance.get("turang_shidu"), 30)
     huigui_yuce = huigui.yuce(shidu) if huigui.n >= 2 else None
     result = shengcheng_juece(jiance, weather, zuowu, data.get("yuce"), xiuzheng, huigui_yuce)
+    result["hydro_ml"] = run_hydro_ml(data, 1)
+    result["hydro_model_status"] = hydro_model_status()
+    result["ml_decision_note"] = "LSTM用于趋势辅助；随机森林仅为异构文献灌溉量参考，不自动替代本地施肥决策。"
+    result["confidence_evaluation"] = evaluate_kexindu(jiance, weather, data.get("yuce") or {}, data.get("ai_analysis") or {}, history=[])
     conn.execute("INSERT INTO juece(jiance_id,zuowu_id,zhuangtai,feili_zhuangtai,guangai_liang,shifei_liang,beng_yunxing,yuanyin,jilu_shijian) VALUES (?,?,?,?,?,?,?,?,?)", (jiance.get("id"), zuowu["id"], result["water_status"], result["fertility_status"], result["recommended_irrigation"], result["recommended_fertilization"], result["pump_runtime"], result["reason"], shijian()))
     history = [zidian(x) for x in conn.execute("SELECT guangai_liang,shifei_liang,jilu_shijian FROM juece ORDER BY jilu_shijian DESC LIMIT 7").fetchall()]
     jilu_rizhi(conn, "水肥决策", "生成软件分析建议，等待人员确认")
@@ -695,6 +778,52 @@ def rizhi():
     rows = [zidian(x) for x in conn.execute("SELECT * FROM rizhi ORDER BY id DESC LIMIT 100").fetchall()]
     conn.close()
     return fanhui(rows)
+
+
+@app.post("/api/turang/fenji")
+def turang_fenji():
+    try:
+        return jsonify({"success": True, "data": grade_soil(request.get_json(silent=True) or {})})
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.get("/api/turang/data-status")
+def turang_status():
+    return jsonify({"success": True, "data": soil_data_status()})
+
+
+@app.post("/api/turang/sample")
+def turang_sample():
+    try:
+        return jsonify({"success": True, "data": sample_soil_grid(request.get_json(silent=True) or {})})
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.get("/api/bingchonghai/model-status")
+def pest_model_status():
+    return jsonify({"success": True, "data": get_pest_model_status()})
+
+
+@app.post("/api/bingchonghai/analyze")
+def pest_analyze():
+    uploaded = request.files.get("image")
+    if uploaded is None:
+        return jsonify({"success": False, "error": "请上传image字段"}), 400
+    try:
+        environment = json.loads(request.form.get("environment", "{}"))
+        if not isinstance(environment, dict):
+            raise ValueError("environment必须是JSON对象")
+        result = analyze_pest_image(uploaded.read(), uploaded.filename or "image.jpg", environment)
+        return jsonify({"success": True, "data": result})
+    except ValueError as exc:
+        return jsonify({"success": False, "error": str(exc)}), 400
+
+
+@app.errorhandler(413)
+def upload_too_large(_error):
+    return jsonify({"success": False, "error": "图片不能超过8MB"}), 413
 
 
 if __name__ == "__main__":

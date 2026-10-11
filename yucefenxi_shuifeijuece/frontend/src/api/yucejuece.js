@@ -1,7 +1,7 @@
 import request from './qingqiu'
 
 export function shengchengYuce(data) {
-  return request.post('/api/yucefenxi/shengcheng', data)
+  return request.post('/api/olive/predict', data)
 }
 
 export function shengchengJuece(data) {

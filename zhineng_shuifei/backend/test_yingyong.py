@@ -3,6 +3,7 @@ import os
 import tempfile
 import unittest
 import atexit
+from PIL import Image
 
 # Keep module-level imports from initializing the bundled demo database in place.
 _test_db_handle, _test_db_path = tempfile.mkstemp(prefix="huiguan-app-test-", suffix=".db")
@@ -34,6 +35,71 @@ class YingyongCeshi(unittest.TestCase):
 
     def setUp(self):
         self.kehu = app.test_client()
+
+    def test_home_serves_complete_frontend(self):
+        response = self.kehu.get("/")
+        self.assertEqual(response.status_code, 200)
+        html = response.get_data(as_text=True)
+        self.assertIn("沃野云枢", html)
+        self.assertIn("/yingyong_recovered.js", html)
+        self.assertIn("/features.js", html)
+        response.close()
+        for path in ("/yangshi.css", "/features.css"):
+            asset = self.kehu.get(path)
+            self.assertEqual(asset.status_code, 200)
+            asset.close()
+
+    def test_soil_grading_validation_and_sampling_bounds(self):
+        response = self.kehu.post("/api/turang/fenji", json={"sand_pct": 40, "clay_pct": 20})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["data"]["silt_pct"], 40)
+        soil_model = response.get_json()["data"]["model"]
+        self.assertTrue(soil_model["is_trained"])
+        self.assertFalse(soil_model["supervised_ground_truth"])
+        self.assertFalse(soil_model["paper_accuracy_transferred"])
+
+        for payload in ({"sand_pct": 101, "clay_pct": 0}, {"sand_pct": 70, "clay_pct": 40}):
+            with self.subTest(payload=payload):
+                self.assertEqual(self.kehu.post("/api/turang/fenji", json=payload).status_code, 400)
+        self.assertEqual(self.kehu.post("/api/turang/sample", json={"row": 4247, "col": 0}).status_code, 400)
+
+    def test_pest_image_accepts_png_and_rejects_bad_uploads(self):
+        image = Image.new("RGB", (16, 12), (30, 120, 45))
+        content = io.BytesIO()
+        image.save(content, format="PNG")
+        content.seek(0)
+        response = self.kehu.post(
+            "/api/bingchonghai/analyze",
+            data={"image": (content, "leaf.png"), "environment": '{"humidity":75,"rainfall":12}'},
+            content_type="multipart/form-data",
+        )
+        self.assertEqual(response.status_code, 200)
+        result = response.get_json()["data"]
+        self.assertEqual(result["image"]["width"], 16)
+        self.assertIsNotNone(result["random_forest"]["score"])
+        self.assertEqual(result["diagnosis"]["score"], result["random_forest"]["score"])
+        # The repository now contains the trained olive-fruit detector.  It is
+        # available here, but its label scope remains fruit detection rather
+        # than disease diagnosis.
+        self.assertTrue(result["model_status"]["yolo"])
+        self.assertEqual(result["model_status"]["yolo_detail"]["label_scope"], "olive_fruit_detection")
+        self.assertIn("classes_zh", result["model_status"]["yolo_detail"])
+
+        self.assertEqual(self.kehu.post(
+            "/api/bingchonghai/analyze",
+            data={"image": (io.BytesIO(b""), "empty.png")},
+            content_type="multipart/form-data",
+        ).status_code, 400)
+        self.assertEqual(self.kehu.post(
+            "/api/bingchonghai/analyze",
+            data={"image": (io.BytesIO(b"not an image"), "broken.png")},
+            content_type="multipart/form-data",
+        ).status_code, 400)
+        self.assertEqual(self.kehu.post(
+            "/api/bingchonghai/analyze",
+            data={"image": (io.BytesIO(b"data"), "not-image.txt")},
+            content_type="multipart/form-data",
+        ).status_code, 400)
 
     def test_zonglan_baohan_liulei_tubiao(self):
         data = self.kehu.get("/api/zonglan").get_json()["data"]

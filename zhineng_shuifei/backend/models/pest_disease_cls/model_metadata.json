@@ -1,0 +1,23 @@
+﻿{
+    "task":  "image_classification",
+    "label_scope":  "olive_leaf_disease_classification",
+    "architecture":  "YOLOv11n-cls",
+    "classes":  [
+                    "aculus_olearius",
+                    "Healthy",
+                    "olive_peacock_spot"
+                ],
+    "dataset":  "habibulbasher01644/olive-leaf-image-dataset",
+    "dataset_license":  "Kaggle dataset license",
+    "dataset_root":  "models/olive-leaf-image-dataset/dataset",
+    "installed_weights":  "models/pest_disease_cls/best.pt",
+    "device":  "cpu",
+    "epochs":  10,
+    "imgsz":  224,
+    "train_images":  2720,
+    "test_images":  680,
+    "top1_accuracy":  0.816,
+    "top5_accuracy":  1,
+    "trained_at":  "2026-10-10T13:10:00+08:00",
+    "warning":  "Classification model for olive leaf disease/pest categories; it does not output bounding boxes."
+}

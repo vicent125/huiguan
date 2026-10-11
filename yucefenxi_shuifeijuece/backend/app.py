@@ -6,6 +6,7 @@ from config import Config
 from extensions import db
 from routes.yucefenxi import yucefenxi_bp
 from routes.shuifeijuece import shuifeijuece_bp
+from olive_predict.routes import olive_predict_bp
 
 
 def chuangjian_yingyong():
@@ -18,6 +19,7 @@ def chuangjian_yingyong():
 
     app.register_blueprint(yucefenxi_bp)
     app.register_blueprint(shuifeijuece_bp)
+    app.register_blueprint(olive_predict_bp)
 
     @app.route("/")
     def shouye():

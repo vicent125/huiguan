@@ -1,4 +1,4 @@
-# 慧灌云控：独立式水肥分析决策平台
+# 沃野云枢：独立式水肥分析决策平台
 
 本软件独立于水肥一体化机运行，不连接硬件接口，不向设备自动发送数据，也不会生成虚假的自动执行回执。完整工作方式为：
 
@@ -7,7 +7,7 @@
 ## VS Code 运行
 
 1. 在 VS Code 中打开文件夹 `C:\Users\D1782\Desktop\xiangmu\zhineng_shuifei`。
-2. 选择左侧“运行和调试”，运行“启动慧灌云控”。
+2. 选择左侧“运行和调试”，运行“启动沃野云枢”。
 3. 浏览器打开 `http://127.0.0.1:5000`。
 
 也可以在终端运行：
@@ -34,6 +34,35 @@ python yingyong.py
 - 报告中心：报告列表、全中文字段详情及浏览器打印/另存为 PDF；
 - 人工协同：不展示设备状态，只保留操作单生成、人工确认和实际执行量登记；
 - 系统管理：预警阈值和操作日志。
+
+## 病虫害模型接入
+
+病虫害页面已经接入两个 GitHub 项目的可替换接口：
+
+- [ezer22/olive-disease-detection](https://github.com/ezer22/olive-disease-detection)：使用其油橄榄 YOLOv11 的 `data.yaml` 类别组织和推理约定。把经过油橄榄数据训练的 `best.pt` 放到 `backend/models/pest_yolo/best.pt`，并安装可选依赖后，页面会自动输出检测框和置信度。
+- [kozodoi/Kaggle_Leaf_Disease_Classification](https://github.com/kozodoi/Kaggle_Leaf_Disease_Classification)：只迁移 CNN 局部纹理与 Transformer 全局上下文融合思路。该仓库默认数据和权重是木薯叶病害，不能直接作为油橄榄诊断模型；油橄榄双分支权重完成训练后再通过 `OLIVE_HYBRID_WEIGHTS` 接入。
+
+可选模型依赖单独列在 `backend/requirements-ml.txt`，基础环境不安装 PyTorch/Ultralytics 也能正常运行。权重路径也可以通过 `backend/.env` 中的 `OLIVE_YOLO_WEIGHTS`、`OLIVE_YOLO_DATA` 和 `OLIVE_HYBRID_WEIGHTS` 配置。模型未配置或加载失败时，接口会明确返回规则降级状态，不伪造论文精度或病种结果。
+
+### 训练数据收集与标注
+
+实际应用应优先采集雅安、西昌及目标油橄榄园的本地样本：健康叶、孔雀斑病、炭疽病、虫害、缺素、药害和机械损伤，并覆盖晴天/阴天、叶片正反面、不同距离、品种和病害严重程度。每张图保留地点、日期、品种、病种、严重程度、天气湿度和专家复核字段。
+
+公开数据可用于预训练和补充：
+
+- [CNN_olive_dataset](https://github.com/sinanuguz/CNN_olive_dataset)：健康、橄榄孔雀斑和 Aculus olearius 等分类图像；若用于 YOLO，需要重新画检测框。
+- [OliveLeafDiseaseDatasetTacna](https://github.com/ichaparroc/OliveLeafDiseaseDatasetTacna)：Fumagina、Virosis 和营养缺乏等油橄榄叶图像；使用前确认数据许可。
+- [olive_disease_paper_reimplementation](https://github.com/MohamedKhalidmk/olive_disease_paper_reimplementation)：可参考数据组织和分类训练流程，不能默认其权重适用于本软件。
+
+YOLO 目标检测需要用 Roboflow、CVAT、Label Studio 或 LabelImg 标注，格式为每行 `class_id x_center y_center width height`，坐标归一化到 0-1，并按训练/验证/测试集分离。建议每个类别至少准备数百张经过专家确认的图片，且测试集按地块或采集日期隔离，避免同一叶片泄漏到训练集。
+
+安装真实模型依赖：
+
+```powershell
+cd backend
+python -m pip install -r requirements-ml.txt
+python yingyong.py
+```
 
 ## 雅安市雨城区天气
 

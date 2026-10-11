@@ -1,0 +1,19 @@
+{
+  "architecture": "CG-RecNet-inspired gated attention tabular classifier",
+  "classes": [
+    "砂土",
+    "砂壤土",
+    "壤土",
+    "粉壤土",
+    "粉土",
+    "黏壤土",
+    "砂质黏壤土",
+    "黏土",
+    "砂质黏土"
+  ],
+  "samples": 8807,
+  "validation_pseudo_accuracy": 0.9806927881885292,
+  "label_source": "USDA rule pseudo-label",
+  "supervised_ground_truth": false,
+  "paper_accuracy_not_transferred": true
+}

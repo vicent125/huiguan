@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>沃野云枢</title>
+  <link rel="stylesheet" href="/yangshi.css?v=2">
+  <link rel="stylesheet" href="/features.css?v=2">
+</head>
+<body>
+  <section id="dengluYe" class="denglu-ye">
+    <div class="denglu-kapian">
+      <div class="denglu-biaozhi">W</div><p class="denglu-yingwen">SMART IRRIGATION</p>
+      <h1>沃野云枢</h1><p class="denglu-fubiaoti">独立式水肥分析决策平台</p>
+      <form id="dengluBiao" class="denglu-biaodan">
+        <label>账号<input name="zhanghao" value="admin" autocomplete="username" required></label>
+        <label>密码<input name="mima" value="123456" type="password" autocomplete="current-password" required></label>
+        <label class="jizhu"><input id="jizhuMima" type="checkbox" checked> 记住密码</label>
+        <button type="submit" class="zhu-anniu">登录</button>
+        <p id="dengluTishi" class="denglu-tishi">演示账号：admin　密码：123456</p>
+      </form>
+    </div>
+  </section>
+
+  <div class="app">
+    <aside class="cebianlan">
+      <div class="pinpai"><span class="pinpai-biao">W</span><div><strong>沃野云枢</strong><small>雨城油橄榄示范版</small></div></div>
+      <nav id="daohang" class="daohang">
+        <button data-ye="zonglan" class="xuanzhong">首页</button><button data-ye="jichu">基础信息管理</button>
+        <button data-ye="jiance">数据录入与监测</button><button data-ye="tianqi">天气分析</button>
+        <button data-ye="yuce">预测分析</button><button data-ye="juece">水肥决策</button>
+        <button data-ye="baogao">报告中心</button><button data-ye="shebei">设备协同</button><button data-ye="xitong">系统管理</button>
+      </nav>
+      <div class="cebian-dibu"><span class="zhuangtai-dian"></span>独立分析模式 · 无硬件接口</div>
+    </aside>
+    <main class="neirong">
+      <header class="dingbu"><div><p id="mianbao">生产总览</p><h1 id="biaoti">今日田间概况</h1></div><div class="dingbu-you"><span id="shijian"></span><button id="dengluBtn" class="youxiang" title="退出当前账号">管理员 · 退出</button></div></header>
+      <div id="tishi" class="tishi" aria-live="polite"></div>
+
+      <section id="zonglan" class="ye mianban xuanshi">
+        <div id="zhibiao" class="zhibiao-wangge sanxiang"></div>
+        <article class="mokuai gaikuang"><div class="mokuai-toubu"><div><h2>当前生产状态</h2><p>四川省雅安市雨城区 · 油橄榄示范地块</p></div><span>软件独立分析</span></div><div id="zhuangtaiKa" class="zhuangtai-wangge"></div></article>
+        <div class="tubiao-wangge jiange">
+          <article class="mokuai"><div class="mokuai-toubu"><h2>近 7 天土壤湿度趋势</h2><span>%</span></div><div id="shiduTu" class="tuqu"></div></article>
+          <article class="mokuai"><div class="mokuai-toubu"><h2>近 7 天灌溉量趋势</h2><span>L/亩</span></div><div id="guangaiTu" class="tuqu"></div></article>
+          <article class="mokuai"><div class="mokuai-toubu"><h2>近 7 天施肥量趋势</h2><span>kg/亩</span></div><div id="shifeiTu" class="tuqu"></div></article>
+          <article class="mokuai"><div class="mokuai-toubu"><h2>未来 3 天天气趋势</h2><span>温度 / 降雨</span></div><div id="zonglanTianqiTu" class="tuqu"></div></article>
+          <article class="mokuai"><div class="mokuai-toubu"><h2>历史决策次数统计</h2><span>近 7 天</span></div><div id="jueceCishuTu" class="tuqu"></div></article>
+          <article class="mokuai"><div class="mokuai-toubu"><h2>预警分布</h2><span>近 30 条监测</span></div><div id="yujingFenbuTu" class="tuqu"></div></article>
+        </div>
+      </section>
+
+      <section id="jichu" class="ye mianban">
+        <article class="mokuai"><div class="mokuai-toubu"><div><h2>基础信息管理</h2><p>统一维护作物、土壤与肥料信息</p></div><div class="fenlei" id="jichuFenlei"><button data-leixing="zuowu" class="xuanzhong">作物管理</button><button data-leixing="turang">土壤参数</button><button data-leixing="feiliao">肥料信息</button></div></div><div id="jichuBiao" class="biaoge-qu"></div></article>
+        <article id="youganlanJieduan" class="mokuai jiange"><div class="mokuai-toubu"><div><h2>油橄榄分生育期参数</h2><p>以下系数用于演示，应用前需结合品种、树龄和雨城区田间试验校准</p></div></div><div id="jieduanBiao" class="biaoge-qu"></div></article>
+      </section>
+
+      <section id="jiance" class="ye mianban">
+        <div class="fenlei yeqian" id="jianceFenlei"><button data-zimian="shoudong" class="xuanzhong">手动录入</button><button data-zimian="piliang">批量导入</button><button data-zimian="lishi">历史监测</button></div>
+        <article id="shoudong" class="zimian mokuai xuanshi"><div class="mokuai-toubu"><div><h2>手动录入监测数据</h2><p>保存后立即参与预测与决策</p></div></div><form id="jianceBiao" class="biaodan wangge-biaodan"><label>作物<select name="zuowu_id"><option value="3">油橄榄</option><option value="1">柑橘</option><option value="2">蓝莓</option><option value="4">玉米</option><option value="5">水稻</option></select></label><label>生育期<input name="shengyujie" value="油脂积累期" required></label><label>土壤湿度 (%)<input name="turang_shidu" type="number" min="0" max="100" step="0.1" value="31.2" required></label><label>土壤温度 (℃)<input name="turang_wendu" type="number" step="0.1" value="26.3"></label><label>空气湿度 (%)<input name="kongqi_shidu" type="number" step="0.1" value="78"></label><label>光照强度 (lux)<input name="guangzhao" type="number" value="17700"></label><label>电导率 EC (mS/cm)<input name="dian_daolv" type="number" min="0" max="20" step="0.01" value="1.30"></label><button class="zhu-anniu" type="submit">保存监测数据</button></form></article>
+        <article id="piliang" class="zimian mokuai"><div class="mokuai-toubu"><div><h2>批量导入</h2><p>支持 .xlsx 和 UTF-8 CSV，首行使用中文字段名或拼音字段名</p></div></div><form id="piliangBiao" class="shangchuan"><input name="file" type="file" accept=".xlsx,.csv" required><button class="zhu-anniu" type="submit">开始导入</button></form><div class="shuo-ming">字段：作物ID、生育期、土壤湿度、土壤温度、空气湿度、光照强度、电导率、记录时间。单次最多 5000 条。</div><div id="daoruJieguo"></div></article>
+        <article id="lishi" class="zimian mokuai"><div class="mokuai-toubu"><div><h2>历史监测数据</h2><p>可按日期范围筛选</p></div><form id="lishiShaixuan" class="hangnei-biaodan"><label>开始<input name="kaishi" type="date"></label><label>结束<input name="jieshu" type="date"></label><button class="ci-anniu" type="submit">查询</button></form></div><div id="lishiBiao" class="biaoge-qu"></div></article>
+      </section>
+
+      <section id="tianqi" class="ye mianban"><article class="mokuai"><div class="mokuai-toubu"><div><h2>地区天气分析</h2><p id="tianqiLaiyuan">正在读取天气缓存</p></div><button id="shuaxinTianqi" class="ci-anniu">更新当前地区天气</button></div><div class="fenlei yeqian" id="tianqiDiquFenlei"><button data-diqu="yucheng" class="xuanzhong">雅安市雨城区</button><button data-diqu="xichang">西昌市</button><button data-diqu="zidingyi">自定义经纬度</button></div><form id="jingweiBiao" class="hangnei-biaodan" style="display:none;margin-bottom:12px"><label>纬度<input name="weidu" type="number" step="0.01" value="29.98" placeholder="如29.98"></label><label>经度<input name="jingdu" type="number" step="0.01" value="103.00" placeholder="如103.00"></label><label>地区名称<input name="diming" type="text" value="自定义地区" placeholder="可选"></label><button class="ci-anniu" type="submit">查询天气</button></form><div id="tianqiXiangqing" class="tianqi-xiangqing"></div></article><article class="mokuai jiange"><div class="mokuai-toubu"><h2>温度与降雨趋势</h2><span>未来 3 天</span></div><div id="tianqiTu" class="tuqu da-tu"></div></article></section>
+
+      <section id="yuce" class="ye mianban"><div class="lianglan"><article class="mokuai"><div class="mokuai-toubu"><div><h2>预测条件</h2><p>基于历史监测与作物参数预测未来需求</p></div></div><form id="yuceBiao" class="biaodan"><label>作物<select name="zuowu_id"><option value="3">油橄榄</option><option value="1">柑橘</option><option value="4">玉米</option><option value="5">水稻</option></select></label><label>预测范围<select name="tianshu"><option value="3">未来 3 天</option><option value="2">未来 2 天</option><option value="1">未来 1 天</option></select></label><div class="fenlei yeqian" id="yuceDiquFenlei" style="margin:8px 0"><button type="button" data-diqu="yucheng" class="xuanzhong">雅安市雨城区</button><button type="button" data-diqu="xichang">西昌市</button><button type="button" data-diqu="zidingyi">自定义经纬度</button></div><div id="yuceJingweiBiao" class="hangnei-biaodan" style="display:none;margin-bottom:8px"><label>纬度<input name="weidu" type="number" step="0.01" value="29.98" placeholder="如29.98"></label><label>经度<input name="jingdu" type="number" step="0.01" value="103.00" placeholder="如103.00"></label></div><button class="zhu-anniu" type="submit">生成预测</button><button type="button" id="aiFenxiBtn" class="ci-anniu kuan" style="margin-top:8px">AI辅助分析</button></form></article><article class="mokuai"><div class="mokuai-toubu"><h2>旱情分析</h2><span id="yuceZhuangtai">未生成</span></div><div id="yuceJieguo" class="jieguo-kong">请选择条件并生成预测。</div></article></div><article id="aiFenxiQu" class="mokuai jiange" style="display:none"><div class="mokuai-toubu"><div><h2>AI辅助分析结果</h2><p id="aiMoxingXinxi">未分析</p></div><span id="aiJiangjiBiaoji"></span></div><div id="aiFenxiJieguo" class="jieguo-kong">点击"AI辅助分析"按钮开始分析。</div></article><div class="tubiao-wangge jiange"><article class="mokuai"><div class="mokuai-toubu"><h2>需水趋势</h2><span>L/亩</span></div><div id="xushuiTu" class="tuqu"></div></article><article class="mokuai"><div class="mokuai-toubu"><h2>需肥趋势</h2><span>kg/亩</span></div><div id="xufeiTu" class="tuqu"></div></article><article class="mokuai kuayue"><div class="mokuai-toubu"><h2>历史湿度与预测湿度对比</h2><span>%</span></div><div id="lishiYuceTu" class="tuqu"></div></article></div></section>
+
+      <section id="juece" class="ye mianban"><div class="lianglan"><article class="mokuai"><div class="mokuai-toubu"><div><h2>当前决策输入</h2><p>默认读取最新监测值，也可现场修正后重新计算</p></div></div><form id="jueceBiao" class="biaodan"><label>作物<select name="zuowu_id"><option value="3">油橄榄</option><option value="1">柑橘</option><option value="4">玉米</option><option value="5">水稻</option></select></label><label>土壤湿度 (%)<input name="turang_shidu" type="number" step="0.1" placeholder="读取最新值"></label><label>电导率 EC<input name="dian_daolv" type="number" step="0.01" placeholder="读取最新值"></label><button class="zhu-anniu" type="submit">查看当前决策结果</button><button type="button" id="jueceAiFenxiBtn" class="ci-anniu kuan" style="margin-top:8px">AI分析+规则校验</button></form><button id="shengchengCanshu" class="ci-anniu kuan" disabled>生成设备参数</button></article><article class="mokuai"><div class="mokuai-toubu"><h2>水肥决策结果</h2><span id="jueceZhuangtai">未生成</span></div><div id="jueceJieguo" class="jieguo-kong">尚未生成分析建议。</div></article></div><article id="anquanJiaoyanQu" class="mokuai jiange" style="display:none"><div class="mokuai-toubu"><div><h2>安全校验结果</h2><p id="anquanZhuangtai">未校验</p></div></div><div id="anquanJiaoyanJieguo" class="jieguo-kong"></div></article><article class="mokuai jiange"><div class="mokuai-toubu"><h2>近 7 次决策趋势</h2><span>灌溉 / 施肥</span></div><div id="jueceTu" class="tuqu"></div></article></section>
+
+      <section id="baogao" class="ye mianban"><article class="mokuai"><div class="mokuai-toubu"><div><h2>报告列表</h2><p>报告包含基础信息、监测、天气、分析、建议、图表数据、风险与人工执行建议</p></div><button id="shengchengBaogao" class="zhu-anniu">生成当前报告</button></div><div id="baogaoBiao" class="biaoge-qu"></div></article></section>
+
+      <section id="shebei" class="ye mianban"><div class="tixing"><b>人工协同模式</b>　本软件不连接水肥一体化机。页面只生成参数，由人员传达并登记实际执行量。</div><article class="mokuai jiange"><div class="mokuai-toubu"><div><h2>生成人工操作单</h2><p>参数来自最近一次水肥决策，需现场人员复核后传达</p></div></div><div id="zhilingQu" class="jieguo-kong">请先在“水肥决策”生成建议。</div></article><article class="mokuai jiange"><div class="mokuai-toubu"><div><h2>人工操作记录</h2><span>确认传达与实际执行登记</span></div><button id="shuaxinShebei" class="ci-anniu">刷新记录</button></div><div id="zhilingBiao" class="biaoge-qu"></div></article></section>
+
+      <section id="xitong" class="ye mianban"><div class="lianglan"><article class="mokuai"><div class="mokuai-toubu"><h2>预警阈值设置</h2><span>可编辑最大值与最小值</span></div><div id="yuzhiBiao" class="biaoge-qu"></div></article><article class="mokuai"><div class="mokuai-toubu"><h2>操作日志</h2><span>最近 100 条</span></div><div id="rizhiBiao" class="biaoge-qu"></div></article></div></section>
+    </main>
+  </div>
+
+  <div id="motaikuang" class="motai"><div class="motai-neirong"><div class="mokuai-toubu"><h2 id="motaiBiaoti">报告详情</h2><button id="guanbiMotai" class="guanbi" title="关闭">×</button></div><div id="motaiZhengwen"></div></div></div>
+  <script src="/yingyong_recovered.js?v=1"></script>
+  <script src="/features.js?v=2"></script>
+</body>
+</html>

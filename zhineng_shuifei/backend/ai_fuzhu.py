@@ -23,6 +23,45 @@ import requests
 
 TISHICI_BANBEN = "1.0.0"
 
+
+def _load_local_env():
+    """Load the backend's ignored local .env without adding a runtime dependency.
+
+    Existing process environment variables always win. This keeps deployment
+    environment configuration authoritative while allowing the desktop app to
+    start with a local DeepSeek configuration from the backend directory.
+    """
+    paths = (
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"),
+        os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"),
+        os.path.join(os.getcwd(), ".env"),
+    )
+    seen = set()
+    for path in paths:
+        if path in seen or not os.path.isfile(path):
+            continue
+        seen.add(path)
+        try:
+            with open(path, "r", encoding="utf-8") as env_file:
+                lines = env_file.readlines()
+        except OSError:
+            continue
+        for raw_line in lines:
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            name, value = line.split("=", 1)
+            name = name.strip()
+            value = value.strip()
+            if not name or name in os.environ:
+                continue
+            if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+                value = value[1:-1]
+            os.environ[name] = value
+
+
+_load_local_env()
+
 TISHICI = """你是农业水肥分析辅助模型，不是自动控制系统。
 
 请根据输入的作物、生育期、土壤监测数据、天气预报数据和历史决策数据，分析未来三天的水肥需求。

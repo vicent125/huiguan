@@ -1,0 +1,37 @@
+{
+  "created_at": "2026-10-10T22:28:50",
+  "sensor_rows": 137558,
+  "sensor_sites": [
+    "Site1",
+    "Site2"
+  ],
+  "lstm": {
+    "model": "LSTM",
+    "target": "same-day mean VWC; one-day-ahead from previous 14 days",
+    "lookback_days": 14,
+    "samples": 1407,
+    "train_samples": 1125,
+    "chronological_test_samples": 282,
+    "mae_vwc": 0.028046604245901108,
+    "rmse_vwc": 0.0387284900007837,
+    "baseline_last_value_mae_vwc": 0.02004375495016575,
+    "warning": "Single-year Ya'an sensor data; random windows are not independent and results are not orchard-wide validation."
+  },
+  "random_forest": {
+    "model": "RandomForestRegressor",
+    "status": "trained_research_prior_not_local_recommendation",
+    "olive_label_rows": 25,
+    "leave_one_out_mae": 37.43105097936499,
+    "leave_one_out_rmse": 60.678089016944035,
+    "leave_one_out_r2": 0.8824793234315603,
+    "local_calibration_rows": 5,
+    "local_water_recommendation_mae": 11.327839999999998,
+    "local_fertilizer_recommendation_mae": 10.72582,
+    "weights": "C:\\Users\\D1782\\Desktop\\woyeyunshu\\zhineng_shuifei\\backend\\olive_predict\\models\\hydro_ml\\olive_water_random_forest.joblib",
+    "warning": "Small heterogeneous literature dataset; not suitable for automatic local dose recommendations."
+  },
+  "fertilizer_model": {
+    "status": "not_trained",
+    "reason": "Available source has no orchard-specific fertilizer amount labels joined to weather/soil and growth/yield outcomes; EC is not an NPK measurement."
+  }
+}

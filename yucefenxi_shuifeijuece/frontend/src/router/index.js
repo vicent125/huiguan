@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
-import Yucefenxi from '../views/Yucefenxi.vue'
+import Yucefenxi from '../views/OliveYucefenxi.vue'
 import Shuifeijuece from '../views/Shuifeijuece.vue'
 
 const routes = [

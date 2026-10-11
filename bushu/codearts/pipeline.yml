@@ -1,6 +1,6 @@
 version: '1.0'
 name: huiguanyunkong-pipeline
-displayName: 慧灌云控构建流水线
+displayName: 沃野云枢构建流水线
 
 triggers:
   push:
